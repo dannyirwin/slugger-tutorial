@@ -2,7 +2,7 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const numOfCells = 16;
-const sideLength = 300;
+const sideLength = 600;
 const scale = sideLength / numOfCells;
 const backgroundColor = "#c3faa2";
 
@@ -246,7 +246,7 @@ function update() {
     then = now - (delta % fpsInterval);
     drawBackground();
     slug.update();
-    //snack.drawSnack();
+    snack.drawSnack();
   }
   !isPaused && requestAnimationFrame(update);
 }
