@@ -32,7 +32,148 @@ function cellPosToCanvasPos(positionArray) {
 
 //---- part 4 vvv
 
-class Slug {
+function Slug(
+  color = "salmon",
+  x = Math.floor(numOfCells / 2),
+  y = Math.floor(numOfCells / 2)
+) {
+  return {
+    color: color,
+    direction: "north",
+    bellyPositions: [], //new
+    isDigesting: false, //new
+    segmentPositions: [
+      [x, y],
+      [x, y + 1],
+      [x, y + 2],
+    ],
+    update: function () {
+      this.checkCollision();
+      this.moveSlug();
+      this.handleDigestion(); //<<NEw
+      this.drawSlug();
+      this.drawBelly(); //<new
+    },
+    drawSlug: function () {
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = scale * 0.8;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      this.segmentPositions.forEach((segmentPosition, index) => {
+        const position = cellPosToCanvasPos(segmentPosition);
+        if (index === 0) {
+          ctx.moveTo(position[0], position[1]);
+        } else {
+          ctx.lineTo(position[0], position[1]);
+        }
+      });
+      ctx.stroke();
+    },
+    drawBelly: function () {
+      //<<new
+      if (this.isDigesting) {
+        ctx.fillStyle = this.color;
+        this.bellyPositions.forEach(position => {
+          position = cellPosToCanvasPos(position);
+          ctx.beginPath();
+          ctx.arc(position[0], position[1], scale * 0.5, 0, 2 * Math.PI);
+          ctx.fill();
+        });
+      }
+    },
+    moveSlug: function () {
+      this.segmentPositions.pop();
+      this.segmentPositions.unshift(this.findNextPosition());
+    },
+    findNextPosition: function (direction = this.direction) {
+      const firstSegment = this.segmentPositions[0];
+      let newSegment = [];
+      switch (direction) {
+        case "north":
+          newSegment[0] = firstSegment[0];
+          newSegment[1] = firstSegment[1] - 1;
+          break;
+        case "west":
+          newSegment[0] = firstSegment[0] - 1;
+          newSegment[1] = firstSegment[1];
+          break;
+        case "south":
+          newSegment[0] = firstSegment[0];
+          newSegment[1] = firstSegment[1] + 1;
+          break;
+        case "east":
+          newSegment[0] = firstSegment[0] + 1;
+          newSegment[1] = firstSegment[1];
+          break;
+      }
+      return newSegment;
+    },
+    checkCollision: function () {
+      const nextPosition = this.findNextPosition();
+      const nextSegmentPositions = [...this.segmentPositions];
+      nextSegmentPositions.pop();
+      const collideWithSelf = nextSegmentPositions.some(
+        position =>
+          position[0] == nextPosition[0] && position[1] == nextPosition[1]
+      );
+      const collideWithEdge =
+        nextPosition[0] < 0 ||
+        nextPosition[0] > numOfCells - 1 ||
+        nextPosition[1] < 0 ||
+        nextPosition[1] > numOfCells - 1;
+      const collideWithSnack =
+        nextPosition[0] == snack.position[0] &&
+        nextPosition[1] == snack.position[1]; //<PART 5
+
+      if (collideWithSelf || collideWithEdge) {
+        isPaused = true;
+        gameOver();
+      } else if (collideWithSnack) {
+        //<PART 5
+        this.handleEatSnack();
+      }
+    },
+    handleEatSnack: function () {
+      //NEW
+      this.bellyPositions.push(snack.position);
+      this.isDigesting = true;
+      snack.handleEaten();
+    },
+    handleMovementInput: function (direction) {
+      const nextPosition = this.findNextPosition(direction);
+      const canMoveThere = !this.segmentPositions.some(
+        position =>
+          position[0] == nextPosition[0] && position[1] == nextPosition[1]
+      );
+      if (canMoveThere) {
+        this.direction = direction;
+      }
+    },
+    handleDigestion: function () {
+      //<<New
+      if (this.isDigesting) {
+        const tempPositions = [...this.bellyPositions];
+        tempPositions.forEach(position => {
+          const finalSegment =
+            this.segmentPositions[this.segmentPositions.length - 1];
+          if (
+            position[0] === finalSegment[0] &&
+            position[1] === finalSegment[1]
+          ) {
+            this.segmentPositions.push(position);
+            this.bellyPositions.shift();
+            if (this.bellyPositions.length == 0) {
+              this.isDigesting = false;
+            }
+          }
+        });
+      }
+    },
+  };
+}
+
+/* class Slug {
   constructor(
     color = "salmon",
     x = Math.floor(numOfCells / 2),
@@ -172,56 +313,60 @@ class Slug {
       });
     }
   }
-}
+} 
 
-let slug = new Slug();
+let slug = new Slug(); */
+
+let slug = Slug();
 
 // part 4 ^^^
 
 // part 5 vvv
 
-class Snack {
-  constructor(color = "#66b8ff") {
-    this.color = color;
-    this.randomizePosition();
-  }
-  randomizePosition() {
-    const slugPositions = [slug.findNextPosition()].concat(
-      slug.segmentPositions
-    );
-    const randomX = Math.floor(Math.random() * numOfCells);
-    const randomY = Math.floor(Math.random() * numOfCells);
-    if (slugPositions.length - 2 == numOfCells ** 2) {
-      gameOver("You WIN!");
-    } else if (
-      slugPositions.some(
-        position => position[0] === randomX && position[1] === randomY
-      )
-    ) {
-      this.randomizePosition();
-    } else {
-      this.position = [randomX, randomY];
-    }
-  }
-  drawSnack() {
-    const position = cellPosToCanvasPos(this.position);
+function Snack(color = "#66b8ff") {
+  const newSnack = {
+    color: color,
+    position: [0, 0],
+    randomizePosition: function () {
+      const slugPositions = [slug.findNextPosition()].concat(
+        slug.segmentPositions
+      );
+      const randomX = Math.floor(Math.random() * numOfCells);
+      const randomY = Math.floor(Math.random() * numOfCells);
+      if (slugPositions.length - 2 == numOfCells ** 2) {
+        gameOver("You WIN!");
+      } else if (
+        slugPositions.some(
+          position => position[0] === randomX && position[1] === randomY
+        )
+      ) {
+        this.randomizePosition();
+      } else {
+        this.position = [randomX, randomY];
+      }
+    },
+    drawSnack: function () {
+      const position = cellPosToCanvasPos(this.position);
 
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(position[0], position[1], scale * 0.3, 0, 2 * Math.PI);
-    ctx.fill();
-  }
-  handleEaten() {
-    snack = new Snack();
-  }
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(position[0], position[1], scale * 0.3, 0, 2 * Math.PI);
+      ctx.fill();
+    },
+    handleEaten: function () {
+      snack = Snack();
+    },
+  };
+  newSnack.randomizePosition();
+  return newSnack;
 }
 
-let snack = new Snack();
+let snack = Snack();
 
 function gameOver(message = "Game Over") {
   isPaused = true;
-  slug = new Slug();
-  snack = new Snack();
+  slug = Slug();
+  snack = Snack();
   drawBackground();
   alert(message);
 }
