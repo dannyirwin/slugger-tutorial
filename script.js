@@ -32,7 +32,7 @@ function cellPosToCanvasPos(positionArray) {
 
 //---- part 4 vvv
 
-function Slug(
+function createSlug(
   color = "salmon",
   x = Math.floor(numOfCells / 2),
   y = Math.floor(numOfCells / 2)
@@ -317,13 +317,13 @@ function Slug(
 
 let slug = new Slug(); */
 
-let slug = Slug();
+let slug = createSlug();
 
 // part 4 ^^^
 
 // part 5 vvv
 
-function Snack(color = "#66b8ff") {
+function createSnack(color = "#66b8ff") {
   const newSnack = {
     color: color,
     position: [0, 0],
@@ -354,19 +354,19 @@ function Snack(color = "#66b8ff") {
       ctx.fill();
     },
     handleEaten: function () {
-      snack = Snack();
+      snack = createSnack();
     },
   };
   newSnack.randomizePosition();
   return newSnack;
 }
 
-let snack = Snack();
+let snack = createSnack();
 
 function gameOver(message = "Game Over") {
   isPaused = true;
-  slug = Slug();
-  snack = Snack();
+  slug = createSlug();
+  snack = createSnack();
   drawBackground();
   alert(message);
 }
