@@ -1,0 +1,12 @@
+body {
+  display: flex;
+  flex-direction: row;
+}
+
+canvas {
+  margin: 20px;
+}
+
+section {
+  width: 300px;
+}
