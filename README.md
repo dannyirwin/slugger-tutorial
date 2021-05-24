@@ -32,3 +32,4 @@ resume the game. While paused, SpaceBar will progress one game tic.
 - Music and sound
 - Randomization of snack color/sprite
 - Variable difficulties regarding game speed and arena size
+# dannyirwin
